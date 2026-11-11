@@ -34,8 +34,8 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 	var req SubmitProjectReq
 
 	type SubmitProjectReq struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&req)
