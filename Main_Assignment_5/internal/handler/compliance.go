@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+type UpdateMyDataReq struct {
+    Username string `json:"username"`
+}
+
 func GetMyData(w http.ResponseWriter, r *http.Request) {
 	user, _ := lmodel.UserFromContext(r.Context())
 
