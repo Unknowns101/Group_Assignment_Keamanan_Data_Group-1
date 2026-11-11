@@ -13,13 +13,22 @@ type UpdateMyDataReq struct {
 }
 
 func GetMyData(w http.ResponseWriter, r *http.Request) {
-	user, _ := lmodel.UserFromContext(r.Context())
-
-	//TODO
-
-	//TODO
-
-	json.NewEncoder(w).Encode(profile)
+	 user, err := lmodel.UserFromContext(r.Context())
+	    if err != nil {
+	        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	        return
+	    }
+	
+	    profile, err := db.GetUserByID(r.Context(), user.ID)
+	    if err != nil {
+	        http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+	        return
+	    }
+	
+	    w.Header().Set("Content-Type", "application/json")
+	    if err := json.NewEncoder(w).Encode(profile); err != nil {
+	        return
+	    }
 }
 
 func UpdateMyData(w http.ResponseWriter, r *http.Request) {
