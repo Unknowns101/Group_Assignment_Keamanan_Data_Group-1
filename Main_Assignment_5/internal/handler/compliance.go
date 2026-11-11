@@ -32,16 +32,33 @@ func GetMyData(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateMyData(w http.ResponseWriter, r *http.Request) {
-	user, _ := lmodel.UserFromContext(r.Context())
+	user, err := lmodel.UserFromContext(r.Context())
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	// TODO
+    var req UpdateMyDataReq
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
 
-	//TODO
+    if req.Username == "" {
+        http.Error(w, "Username is required", http.StatusBadRequest)
+        return
+    }
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message":  "Data updated successfully",
-		"username": req.Username,
-	})
+    if err := db.UpdateMyData(r.Context(), user.ID, req.Username); err != nil {
+        http.Error(w, "Failed to update user data", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{
+        "message":  "Data updated successfully",
+        "username": req.Username,
+    })
 }
 
 func GetMyAuditLog(w http.ResponseWriter, r *http.Request) {
