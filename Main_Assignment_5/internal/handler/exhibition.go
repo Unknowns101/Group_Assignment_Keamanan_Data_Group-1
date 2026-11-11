@@ -31,6 +31,24 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
+	var req SubmitProjectReq
+
+	type SubmitProjectReq struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if req.Title == "" || req.Description == "" {
+		http.Error(w, "Title and description are required", http.StatusBadRequest)
+		return
+	}
+
 	// TODO
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int{"project_id": projectID})
