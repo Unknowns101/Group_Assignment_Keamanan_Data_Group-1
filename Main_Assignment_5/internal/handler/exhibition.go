@@ -49,6 +49,13 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	projectID, err := db.CreateProject(r.Context(), req.Title, req.Description, userCtx.ID)
+	if err != nil {
+		http.Error(w, "Failed to create project", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	// TODO
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int{"project_id": projectID})
