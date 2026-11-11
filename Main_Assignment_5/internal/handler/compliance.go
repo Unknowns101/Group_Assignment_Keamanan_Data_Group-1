@@ -87,21 +87,49 @@ func GetMyAuditLog(w http.ResponseWriter, r *http.Request) {
 }
 
 func ExportMyData(w http.ResponseWriter, r *http.Request) {
-	user, _ := lmodel.UserFromContext(r.Context())
+	user, err := lmodel.UserFromContext(r.Context())
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	// TODO
+    profile, err := db.GetUserByID(r.Context(), user.ID)
+    if err != nil {
+        http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+        return
+    }
 
-	// TODO
+    projects, err := db.GetUserProjects(r.Context(), user.ID)
+    if err != nil {
+        http.Error(w, "Failed to fetch user projects", http.StatusInternalServerError)
+        return
+    }
 
-	export := map[string]interface{}{
-		"exported_at": time.Now(),
-		"profile":     profile,
-		"projects":    projects,
-		"audit_logs":  logs,
-	}
+    if projects == nil {
+        projects = []lmodel.Project{}
+    }
 
-	w.Header().Set("Content-Disposition", "attachment; filename=my_data_export.json")
-	json.NewEncoder(w).Encode(export)
+    logs, err := db.GetUserAuditLogs(r.Context(), user.ID)
+    if err != nil {
+        http.Error(w, "Failed to fetch audit logs", http.StatusInternalServerError)
+        return
+    }
+
+    if logs == nil {
+        logs = []lmodel.AuditLog{}
+    }
+
+    export := map[string]interface{}{
+        "exported_at": time.Now(),
+        "profile":     profile,
+        "projects":    projects,
+        "audit_logs":  logs,
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.Header().Set("Content-Disposition", "attachment; filename=my_data_export.json")
+
+    json.NewEncoder(w).Encode(export)
 }
 func DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 	user, _ := lmodel.UserFromContext(r.Context())
