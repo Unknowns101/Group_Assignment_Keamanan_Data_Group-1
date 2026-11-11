@@ -132,11 +132,19 @@ func ExportMyData(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(export)
 }
 func DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
-	user, _ := lmodel.UserFromContext(r.Context())
+	user, err := lmodel.UserFromContext(r.Context())
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	// TODO
+    if err := db.DeleteUserAccount(r.Context(), user.ID); err != nil {
+        http.Error(w, "Failed to delete account", http.StatusInternalServerError)
+        return
+    }
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Your account and all data have been permanently deleted",
-	})
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{
+        "message": "Your account and all data have been permanently deleted",
+    })
 }
