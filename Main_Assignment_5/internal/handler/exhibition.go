@@ -26,7 +26,11 @@ type GradeProjectReq struct {
 func SubmitProject(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := lmodel.UserFromContext(r.Context())
 	// TODO
-
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	
 	// TODO
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int{"project_id": projectID})
