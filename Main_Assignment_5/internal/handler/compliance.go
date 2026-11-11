@@ -62,17 +62,28 @@ func UpdateMyData(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMyAuditLog(w http.ResponseWriter, r *http.Request) {
-	user, _ := lmodel.UserFromContext(r.Context())
+	user, err := lmodel.UserFromContext(r.Context())
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	// TODO
+    logs, err := db.GetUserAuditLogs(r.Context(), user.ID)
+    if err != nil {
+        http.Error(w, "Failed to fetch audit logs", http.StatusInternalServerError)
+        return
+    }
 
-	// TODO
+    if logs == nil {
+        logs = []lmodel.AuditLog{}
+    }
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user":  user.Username,
-		"total": len(logs),
-		"logs":  logs,
-	})
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "user":  user.Username,
+        "total": len(logs),
+        "logs":  logs,
+    })
 }
 
 func ExportMyData(w http.ResponseWriter, r *http.Request) {
