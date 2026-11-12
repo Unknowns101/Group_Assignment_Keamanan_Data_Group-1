@@ -63,6 +63,9 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 
 func ListProjects(w http.ResponseWriter, r *http.Request) {
 	// TODO
+	if projects == nil {
+		projects = []lmodel.Project{}
+	}
 
 	// TODO
 
