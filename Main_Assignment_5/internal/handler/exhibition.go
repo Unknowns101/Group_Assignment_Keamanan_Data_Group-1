@@ -63,7 +63,8 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 
 func ListProjects(w http.ResponseWriter, r *http.Request) {
 	// TODO
-
+	projects, err := db.GetAllProjects(r.Context())
+	
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
 		return
