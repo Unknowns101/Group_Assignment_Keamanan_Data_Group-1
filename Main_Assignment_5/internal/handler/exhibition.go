@@ -137,42 +137,46 @@ func GradeProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProjectGrades(w http.ResponseWriter, r *http.Request) {
-	userCtx, _ := lmodel.UserFromContext(r.Context())
-	
-	projectID, err := strconv.Atoi(r.PathValue("id"))
+	userCtx, err := lmodel.UserFromContext(r.Context())
+    
 	if err != nil {
-		http.Error(w, "Invalid project ID", http.StatusBadRequest)
-		return
-	}
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    projectID, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil {
+        http.Error(w, "Invalid project ID", http.StatusBadRequest)
+        return
+    }
  
 	w.Header().Set("Content-Type", "application/json")
  
-	if userCtx.Role == "student" {
-		project, err := db.GetProjectByID(r.Context(), projectID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				http.Error(w, "Project not found", http.StatusNotFound)
-				return
-			}
-			http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
-			return
-		}
+	project, err := db.GetProjectByID(r.Context(), projectID)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            http.Error(w, "Project not found", http.StatusNotFound)
+            return
+        }
 
-		if project.StudentID != userCtx.ID {
-			http.Error(w, "Forbidden: you can only view grades for your own projects", http.StatusForbidden)
-			return
-		}
+        http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
+        return
+    }
 
-	}
+    if userCtx.Role == "student" && project.StudentID != userCtx.ID {
+        http.Error(w, "Forbidden: you can only view grades for your own projects", http.StatusForbidden)
+        return
+    }
 
-	grades, err := db.GetGradesForProject(r.Context(), projectID)
-	if err != nil {
-		http.Error(w, "Failed to fetch grades", http.StatusInternalServerError)
-		return
-	}
+    grades, err := db.GetGradesForProject(r.Context(), projectID)
+    if err != nil {
+        http.Error(w, "Failed to fetch grades", http.StatusInternalServerError)
+        return
+    }
 
-	if grades == nil {
-		grades = []lmodel.Grade{}
-	}
+    if grades == nil {
+        grades = []lmodel.Grade{}
+    }
+	
 	json.NewEncoder(w).Encode(grades)
 }
