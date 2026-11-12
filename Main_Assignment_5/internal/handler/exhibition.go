@@ -1,3 +1,42 @@
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	var req AuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req AuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	claims := jwt.MapClaims{
+		"user_id":  "123-uuid-atau-id", 
+		"username": req.Username,
+		"role":     "student",          
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("SECRET_KEY_DARI_ENV"))
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token": tokenString,
+	})
+}
+
 package handler
 
 import (
