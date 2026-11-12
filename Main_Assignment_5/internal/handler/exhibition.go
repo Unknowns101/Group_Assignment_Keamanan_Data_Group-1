@@ -63,10 +63,16 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 
 func ListProjects(w http.ResponseWriter, r *http.Request) {
 	// TODO
+
+	if err != nil {
+		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
+		return
+	}
+	
 	if projects == nil {
 		projects = []lmodel.Project{}
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 
 	// TODO
