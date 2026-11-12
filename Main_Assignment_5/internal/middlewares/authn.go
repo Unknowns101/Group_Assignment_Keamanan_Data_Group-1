@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5" // atau pustaka JWT yang disediakan starter code
+	"github.com/golang-jwt/jwt/v5" 
 	"golang.org/x/crypto/argon2"
 )
 
-// Contoh struct payload registrasi/login
 type AuthRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Role     string `json:"role"` // student, judge, admin
+	Role     string `json:"role"` 
 }
 
 package middlewares
