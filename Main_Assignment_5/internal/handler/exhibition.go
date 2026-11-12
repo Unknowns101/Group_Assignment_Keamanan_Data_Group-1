@@ -66,6 +66,8 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 	if projects == nil {
 		projects = []lmodel.Project{}
 	}
+	
+	w.Header().Set("Content-Type", "application/json")
 
 	// TODO
 
