@@ -139,9 +139,24 @@ func GradeProject(w http.ResponseWriter, r *http.Request) {
 func GetProjectGrades(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := lmodel.UserFromContext(r.Context())
 	
-	// TODO 
-
-	// TODO
+	projectID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+ 
+	w.Header().Set("Content-Type", "application/json")
+ 
+	if userCtx.Role == "student" {
+		project, err := db.GetProjectByID(r.Context(), projectID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				http.Error(w, "Project not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
+			return
+		}
 
 		if project.StudentID != userCtx.ID {
 			http.Error(w, "Forbidden: you can only view grades for your own projects", http.StatusForbidden)
@@ -160,5 +175,4 @@ func GetProjectGrades(w http.ResponseWriter, r *http.Request) {
 		grades = []lmodel.Grade{}
 	}
 	json.NewEncoder(w).Encode(grades)
-
 }
