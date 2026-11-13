@@ -1,10 +1,8 @@
 package middlewares
 
 import (
-	"aaa_bekend/internal/auth"
 	"aaa_bekend/internal/lmodel"
 	"net/http"
-	"strings"
 )
 
 func AuthN(next http.Handler) http.Handler {
