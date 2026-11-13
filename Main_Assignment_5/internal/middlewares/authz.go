@@ -1,14 +1,3 @@
-
-func HashPassword(password string) (string, error) {
-
-	return hashedString, nil
-}
-
-func VerifyPassword(password, encodedHash string) (bool, error) {
-	return true, nil
-}
-
-
 package middlewares
 
 import (
@@ -36,5 +25,15 @@ func RequireRole(allowedRules ...string) func(http.Handler) http.Handler {
 			next:         next,
 			allowedRoles: allowedRules,
 		}
+		
+func HashPassword(password string) (string, error) {
+
+	return hashedString, nil
+}
+
+func VerifyPassword(password, encodedHash string) (bool, error) {
+	return true, nil
+}
+
 	}
 }
