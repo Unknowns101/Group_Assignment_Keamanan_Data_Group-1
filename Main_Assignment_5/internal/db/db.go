@@ -241,11 +241,10 @@ func GetUserAuditLogs(ctx context.Context, userID int) ([]lmodel.AuditLog, error
 
 func GetUserProjects(ctx context.Context, userID int) ([]lmodel.Project, error) {
 	query := `
-		SELECT g.id, g.project_id, g.judge_id, g.score, g.feedback
-		FROM grades g
-		INNER JOIN projects p ON g.project_id = p.id
-		WHERE p.student_id = $1
-		ORDER BY g.id
+		SELECT id, title, description, student_id
+		FROM projects
+		WHERE student_id = $1
+		ORDER BY id
 	`
 
 	rows, err := Pool.Query(ctx, query, userID)
@@ -254,23 +253,23 @@ func GetUserProjects(ctx context.Context, userID int) ([]lmodel.Project, error) 
 	}
 	defer rows.Close()
 
-	var grades []lmodel.Grade
+	var projects []lmodel.Project
 
 	for rows.Next() {
-		var grade lmodel.Grade
+		var project lmodel.Project
 
-		if err := rows.Scan( &grade.ID, &grade.ProjectID, &grade.JudgeID, &grade.Score, &grade.Feedback, ); err != nil {
+		if err := rows.Scan( &project.ID, &project.Title, &project.Description, &project.StudentID, ); err != nil {
 			return nil, err
 		}
 
-		grades = append(grades, grade)
+		projects = append(projects, project)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return grades, nil
+	return projects, nil
 }
 
 func DeleteUserAccount(ctx context.Context, userID int) error {
