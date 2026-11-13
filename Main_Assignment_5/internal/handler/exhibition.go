@@ -24,7 +24,7 @@ type GradeProjectReq struct {
 // POST /api/v1/projects
 
 func SubmitProject(w http.ResponseWriter, r *http.Request) {
-	userCtx, _ := lmodel.UserFromContext(r.Context())
+	userCtx, err := lmodel.UserFromContext(r.Context())
 	// TODO
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -32,11 +32,6 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	var req SubmitProjectReq
-
-	type SubmitProjectReq struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-	}
 
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
