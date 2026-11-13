@@ -31,25 +31,18 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req SubmitProjectReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-
-	req.Title = strings.TrimSpace(req.Title)
-	req.Description = strings.TrimSpace(req.Description)
 
 	if req.Title == "" || req.Description == "" {
 		http.Error(w, "Title and description are required", http.StatusBadRequest)
 		return
 	}
 
-	projectID, err := db.CreateProject(
-		r.Context(),
-		req.Title,
-		req.Description,
-		userCtx.ID,
-	)
+	projectID, err := db.CreateProject(r.Context(), req.Title, req.Description, userCtx.ID)
 	if err != nil {
 		http.Error(w, "Failed to create project", http.StatusInternalServerError)
 		return
@@ -57,10 +50,7 @@ func SubmitProject(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
-	json.NewEncoder(w).Encode(map[string]int{
-		"project_id": projectID,
-	})
+	json.NewEncoder(w).Encode(map[string]int{"project_id": projectID})
 }
 
 func ListProjects(w http.ResponseWriter, r *http.Request) {
