@@ -1,3 +1,21 @@
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5" 
+	"golang.org/x/crypto/argon2"
+)
+
+type AuthRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"` 
+}
+
 package middlewares
 
 import (

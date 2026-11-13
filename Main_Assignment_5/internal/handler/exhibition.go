@@ -1,3 +1,42 @@
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	var req AuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req AuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	claims := jwt.MapClaims{
+		"user_id":  "123-uuid-atau-id", 
+		"username": req.Username,
+		"role":     "student",          
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("SECRET_KEY_DARI_ENV"))
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token": tokenString,
+	})
+}
+
 package handler
 
 import (
@@ -132,42 +171,46 @@ func GradeProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProjectGrades(w http.ResponseWriter, r *http.Request) {
-	userCtx, _ := lmodel.UserFromContext(r.Context())
-	
-	projectID, err := strconv.Atoi(r.PathValue("id"))
+	userCtx, err := lmodel.UserFromContext(r.Context())
+    
 	if err != nil {
-		http.Error(w, "Invalid project ID", http.StatusBadRequest)
-		return
-	}
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    projectID, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil {
+        http.Error(w, "Invalid project ID", http.StatusBadRequest)
+        return
+    }
  
 	w.Header().Set("Content-Type", "application/json")
  
-	if userCtx.Role == "student" {
-		project, err := db.GetProjectByID(r.Context(), projectID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				http.Error(w, "Project not found", http.StatusNotFound)
-				return
-			}
-			http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
-			return
-		}
+	project, err := db.GetProjectByID(r.Context(), projectID)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            http.Error(w, "Project not found", http.StatusNotFound)
+            return
+        }
 
-		if project.StudentID != userCtx.ID {
-			http.Error(w, "Forbidden: you can only view grades for your own projects", http.StatusForbidden)
-			return
-		}
+        http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
+        return
+    }
 
-	}
+    if userCtx.Role == "student" && project.StudentID != userCtx.ID {
+        http.Error(w, "Forbidden: you can only view grades for your own projects", http.StatusForbidden)
+        return
+    }
 
-	grades, err := db.GetGradesForProject(r.Context(), projectID)
-	if err != nil {
-		http.Error(w, "Failed to fetch grades", http.StatusInternalServerError)
-		return
-	}
+    grades, err := db.GetGradesForProject(r.Context(), projectID)
+    if err != nil {
+        http.Error(w, "Failed to fetch grades", http.StatusInternalServerError)
+        return
+    }
 
-	if grades == nil {
-		grades = []lmodel.Grade{}
-	}
+    if grades == nil {
+        grades = []lmodel.Grade{}
+    }
+	
 	json.NewEncoder(w).Encode(grades)
 }
