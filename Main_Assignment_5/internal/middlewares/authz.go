@@ -27,7 +27,7 @@ func (rg *RoleGuard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Forbidden", http.StatusForbidden)
 }
 
-func RequireRole(allowedRules ...string) func(http.Handler) http.Handler {
+func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return &RoleGuard{
 			next:         next,
