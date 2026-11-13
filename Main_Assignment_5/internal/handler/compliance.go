@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"strings"
+	
+	"github.com/jackc/pgx/v5"
 )
 
 type UpdateMyDataReq struct {
@@ -13,52 +16,56 @@ type UpdateMyDataReq struct {
 }
 
 func GetMyData(w http.ResponseWriter, r *http.Request) {
-	 user, err := lmodel.UserFromContext(r.Context())
-	    if err != nil {
-	        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-	        return
-	    }
-	
-	    profile, err := db.GetUserByID(r.Context(), user.ID)
-	    if err != nil {
-	        http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
-	        return
-	    }
-	
-	    w.Header().Set("Content-Type", "application/json")
-	    if err := json.NewEncoder(w).Encode(profile); err != nil {
-	        return
-	    }
+	user, err := lmodel.UserFromContext(r.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	profile, err := db.GetUserByID(r.Context(), user.ID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profile)
 }
 
 func UpdateMyData(w http.ResponseWriter, r *http.Request) {
 	user, err := lmodel.UserFromContext(r.Context())
-    if err != nil {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-    var req UpdateMyDataReq
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, "Invalid request body", http.StatusBadRequest)
-        return
-    }
+	var req UpdateMyDataReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
-    if req.Username == "" {
-        http.Error(w, "Username is required", http.StatusBadRequest)
-        return
-    }
+	req.Username = strings.TrimSpace(req.Username)
+	if req.Username == "" {
+		http.Error(w, "Username is required", http.StatusBadRequest)
+		return
+	}
 
-    if err := db.UpdateMyData(r.Context(), user.ID, req.Username); err != nil {
-        http.Error(w, "Failed to update user data", http.StatusInternalServerError)
-        return
-    }
+	if err := db.UpdateMyData(r.Context(), user.ID, req.Username); err != nil {
+		http.Error(w, "Failed to update user data", http.StatusInternalServerError)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{
-        "message":  "Data updated successfully",
-        "username": req.Username,
-    })
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message":  "Data updated successfully",
+		"username": req.Username,
+	})
 }
 
 func GetMyAuditLog(w http.ResponseWriter, r *http.Request) {
@@ -88,48 +95,59 @@ func GetMyAuditLog(w http.ResponseWriter, r *http.Request) {
 
 func ExportMyData(w http.ResponseWriter, r *http.Request) {
 	user, err := lmodel.UserFromContext(r.Context())
-    if err != nil {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-    profile, err := db.GetUserByID(r.Context(), user.ID)
-    if err != nil {
-        http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
-        return
-    }
+	profile, err := db.GetUserByID(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
+		return
+	}
 
-    projects, err := db.GetUserProjects(r.Context(), user.ID)
-    if err != nil {
-        http.Error(w, "Failed to fetch user projects", http.StatusInternalServerError)
-        return
-    }
+	projects, err := db.GetUserProjects(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch user projects", http.StatusInternalServerError)
+		return
+	}
 
-    if projects == nil {
-        projects = []lmodel.Project{}
-    }
+	if projects == nil {
+		projects = []lmodel.Project{}
+	}
 
-    logs, err := db.GetUserAuditLogs(r.Context(), user.ID)
-    if err != nil {
-        http.Error(w, "Failed to fetch audit logs", http.StatusInternalServerError)
-        return
-    }
+	grades, err := db.GetUserProjectGrades(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch user grades", http.StatusInternalServerError)
+		return
+	}
 
-    if logs == nil {
-        logs = []lmodel.AuditLog{}
-    }
+	if grades == nil {
+		grades = []lmodel.Grade{}
+	}
 
-    export := map[string]interface{}{
-        "exported_at": time.Now(),
-        "profile":     profile,
-        "projects":    projects,
-        "audit_logs":  logs,
-    }
+	logs, err := db.GetUserAuditLogs(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch audit logs", http.StatusInternalServerError)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.Header().Set("Content-Disposition", "attachment; filename=my_data_export.json")
+	if logs == nil {
+		logs = []lmodel.AuditLog{}
+	}
 
-    json.NewEncoder(w).Encode(export)
+	export := map[string]interface{}{
+		"exported_at": time.Now(),
+		"profile":     profile,
+		"projects":    projects,
+		"grades":      grades,
+		"audit_logs":  logs,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", "attachment; filename=my_data_export.json")
+
+	json.NewEncoder(w).Encode(export)
 }
 func DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 	user, err := lmodel.UserFromContext(r.Context())
@@ -145,6 +163,6 @@ func DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(map[string]string{
-        "message": "Your account and all data have been permanently deleted",
+        "message": "Your account has been deleted successfully",
     })
 }
