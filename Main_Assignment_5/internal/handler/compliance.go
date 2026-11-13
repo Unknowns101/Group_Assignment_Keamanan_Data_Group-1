@@ -117,16 +117,6 @@ func ExportMyData(w http.ResponseWriter, r *http.Request) {
 		projects = []lmodel.Project{}
 	}
 
-	grades, err := db.GetUserProjectGrades(r.Context(), user.ID)
-	if err != nil {
-		http.Error(w, "Failed to fetch user grades", http.StatusInternalServerError)
-		return
-	}
-
-	if grades == nil {
-		grades = []lmodel.Grade{}
-	}
-
 	logs, err := db.GetUserAuditLogs(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Failed to fetch audit logs", http.StatusInternalServerError)
@@ -141,7 +131,6 @@ func ExportMyData(w http.ResponseWriter, r *http.Request) {
 		"exported_at": time.Now(),
 		"profile":     profile,
 		"projects":    projects,
-		"grades":      grades,
 		"audit_logs":  logs,
 	}
 
