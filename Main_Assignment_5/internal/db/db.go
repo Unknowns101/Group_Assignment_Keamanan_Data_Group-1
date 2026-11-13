@@ -185,92 +185,58 @@ func GetUserByID(ctx context.Context, userID int) (*lmodel.User, error) {
 }
 
 func UpdateMyData(ctx context.Context, userID int, username string) error {
-	query := `
-		UPDATE users
-		SET username = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $2
-	`
-
-	result, err := Pool.Exec(ctx, query, username, userID)
+	query := `UPDATE users SET username = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`
+	_, err := Pool.Exec(ctx, query, username, userID)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("user not found or username unchanged")
-	}
-
 	return nil
 }
 
 func GetUserAuditLogs(ctx context.Context, userID int) ([]lmodel.AuditLog, error) {
-	query := `
-		SELECT method, path, status_code, ip_address, timestamp
-		FROM audit_logs
-		WHERE user_id = $1
-		ORDER BY timestamp DESC
-		LIMIT 50
-	`
-
+	query := `SELECT method, path, status_code, ip_address, timestamp FROM 
+			audit_logs WHERE user_id=$1 
+			ORDER BY timestamp DESC LIMIT 50
+		`
 	rows, err := Pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var logs []lmodel.AuditLog
 
 	for rows.Next() {
 		var log lmodel.AuditLog
-
-		if err := rows.Scan(&log.Method, &log.Path, &log.StatusCode, &log.IPAddress, &log.Timestamp,
-		); err != nil {
-			return nil, err
-		}
-
+		rows.Scan(&log.Method, &log.Path, &log.StatusCode, &log.IPAddress, &log.Timestamp)
 		logs = append(logs, log)
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
 	return logs, nil
 }
 
 func GetUserProjects(ctx context.Context, userID int) ([]lmodel.Project, error) {
-	query := `
-		SELECT id, title, description, student_id
-		FROM projects
-		WHERE student_id = $1
-		ORDER BY id
-	`
+
+	query := "SELECT id, title, description, student_id FROM projects WHERE student_id=$1"
 
 	rows, err := Pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
+	defer rows.Close()
 	var projects []lmodel.Project
 
 	for rows.Next() {
 		var project lmodel.Project
-
-		if err := rows.Scan( &project.ID, &project.Title, &project.Description, &project.StudentID, ); err != nil {
+		err = rows.Scan(&project.ID, &project.Title, &project.Description, &project.StudentID)
+		if err != nil {
 			return nil, err
 		}
-
 		projects = append(projects, project)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return projects, nil
 }
+
 
 func DeleteUserAccount(ctx context.Context, userID int) error {
 	query := `DELETE FROM users WHERE id = $1`
