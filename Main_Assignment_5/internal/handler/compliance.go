@@ -4,6 +4,7 @@ import (
 	"aaa_bekend/internal/db"
 	"aaa_bekend/internal/lmodel"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 	"strings"
