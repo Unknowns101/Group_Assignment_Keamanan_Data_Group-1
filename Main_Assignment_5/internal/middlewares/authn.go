@@ -22,9 +22,9 @@ func AuthN(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 
-		// TODO
+		// Sesuaikan dengan secret key yang digunakan saat membuat token
 
-		// TODO
+		// Sesuaikan tipe data dengan struct lmodel.User
 
 		ctx := lmodel.ContextWithUser(r.Context(), userCtx)
 		next.ServeHTTP(w, r.WithContext(ctx))
