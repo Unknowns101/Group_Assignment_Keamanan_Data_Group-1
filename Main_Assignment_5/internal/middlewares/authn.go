@@ -1,4 +1,4 @@
-package main
+package middlewares
 
 import (
 	"database/sql"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5" 
 	"golang.org/x/crypto/argon2"
+	"aaa_bekend/internal/lmodel"
+	"net/http"
 )
 
 type AuthRequest struct {
@@ -15,13 +17,6 @@ type AuthRequest struct {
 	Password string `json:"password"`
 	Role     string `json:"role"` 
 }
-
-package middlewares
-
-import (
-	"aaa_bekend/internal/lmodel"
-	"net/http"
-)
 
 func AuthN(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
