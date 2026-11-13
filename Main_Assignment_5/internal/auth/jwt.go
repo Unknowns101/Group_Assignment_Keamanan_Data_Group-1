@@ -51,7 +51,7 @@ func GenerateToken(user *lmodel.User) (string, error) {
 		Username: user.Username,
 		Role:     user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)), // Token expires in 1 hour
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(120 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
